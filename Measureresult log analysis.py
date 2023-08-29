@@ -6,41 +6,34 @@ from tkinter import filedialog
 from datetime import datetime
 import re
 import pandas as pd
+from enum import Enum
+
+class State(Enum):
+    INIT            = 0
+    SEARCH_JOB_INFO = 1
+    SEARCH_STATUSES = 2
 
 # Read all files from a folder location including subfolders
 # Identify individual measurement jobs
 # Write results in a csv table format (row of values per measurement)
 def parse_logs_to_csv(folder_path, output_file_location):
-    csv_files = glob.glob(os.path.join(folder_path, '**', '*.csv'), recursive=True)
-    measure_results_row = [] # list of measurement jobs
-    measure_results_data = {
-        'Timestamp' : None,
-        'Measurement_ID' : ""
-    }
-    reading_job = False # parsing stage = reading in measurement values
-
+    csv_files = glob.glob(os.path.join(folder_path, '**', 'MeasureResult*.csv'), recursive=True)
+    
+    parsing_state = State.INIT
+    
     for csv_file in csv_files:
+        measure_results_data = init_measure_results_data()
         with open(csv_file, 'r') as file:
-            input_text = file.read()
-            pattern = re.compile(r"""
-                                 (?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3};\ ;\ ;S;\ -\ )ASCCS\ Start\ Measurement\ Message\ received(\r\n|\r|\n)
-                                 (?P=timestamp)(?P=fill)Measurement\ ID:\s*(?P<measurement_id>\w*-\w*-\w*-\w*-\w*)(\r\n|\r|\n)
-                                 (?P=timestamp)(?P=fill)Lane:\s*(?P<lane>\d)(\r\n|\r|\n)
-                                 (?P=timestamp)(?P=fill)Task:\s*(?P<task_num>\d)\s*-\s*(?P<task_str>\w*)\s*(\r\n|\r|\n)
-                                 (?P=timestamp)(?P=fill)Pos:\s*(?P<pos_num>\d)\s*-\s*(?P<pos_str>\w*)
-                                 """, re.VERBOSE)
+            log_lines = file.readlines()
 
-            matches = pattern.finditer(input_text)
-            if matches:
-                for match in matches:
-                    print(match.groupdict()['pos_str'])
-            else:
-                print("No matches found.")
+        for log_line in log_lines:
 
-            # print(f"Contents of {csv_file}:")
-            # print(file.read())
-            #print("=" * 40)
-            #   
+            if parsing_state is State.INIT:
+                measure_results = [] # list of measurement jobs
+                parsing_state = State.SEARCH_JOB_INFO
+
+            elif parsing_state is State.SEARCH_JOB_INFO:
+                pass
 
 def collect_jobs(folder_path, output_file_location):
     csv_files = glob.glob(os.path.join(folder_path, '**', 'MeasureResult*.csv'), recursive=True)
