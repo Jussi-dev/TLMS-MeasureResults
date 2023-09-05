@@ -227,7 +227,7 @@ def init_measure_results_data():
     return measure_results_data
 
 def parse_timestamp(match_timestamp):
-    return datetime.strptime(match_timestamp, r'%d.%m.%Y %H:%M:%S;%f')
+    return datetime.strptime(match_timestamp, '%d.%m.%Y %H:%M:%S;%f')
 
 def main():
     root = tk.Tk()
@@ -238,6 +238,7 @@ def main():
     # parse_logs_to_csv(log_folder_path, output_file_location)
     df = pd.DataFrame.from_dict(collect_jobs(log_folder_path, output_file_location))
     df.to_csv('Measureresults.csv')
+    df.to_excel('Measureresult.xlsx')
 
 if __name__ == "__main__":
     main()
