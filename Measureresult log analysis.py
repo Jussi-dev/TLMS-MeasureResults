@@ -37,9 +37,7 @@ def parse_logs_to_csv(folder_path, output_file_location):
 
 def collect_jobs(folder_path, output_file_location):
     csv_files = glob.glob(os.path.join(folder_path, '**', 'MeasureResult*.csv'), recursive=True)
-    
     measure_results = [] # list of measurement jobs
-
 
     for csv_file in csv_files:
         measure_results_data = init_measure_results_data()
@@ -99,19 +97,19 @@ def collect_jobs(folder_path, output_file_location):
         pattern = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; - )Cont. Length:\s*(?P<c_length>\s*\d*)')
         match = pattern.search(log_lines)
         if match:
-            measure_results_data['Cont_Length'] = match.groupdict()['c_length']
+            measure_results_data['Cont_Length'] = int(match.groupdict()['c_length'])
 
         # Search CONTAINER WIDTH
         pattern = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; - )Cont. Width:\s*(?P<c_width>\s*\d*)')
         match = pattern.search(log_lines)
         if match:
-            measure_results_data['Cont_Width'] = match.groupdict()['c_width']
+            measure_results_data['Cont_Width'] = int(match.groupdict()['c_width'])
 
         # Search CONTAINER HEIGHT
         pattern = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; - )Cont. Height:\s*(?P<c_height>\s*\d*)')
         match = pattern.search(log_lines)
         if match:
-            measure_results_data['Cont_Height'] = match.groupdict()['c_height']
+            measure_results_data['Cont_Height'] = int(match.groupdict()['c_height'])
         
         # Search LANE STATUS
         pattern = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; - )LaneStat\s*-\s*(?P<lane_status>\w*)')
@@ -163,9 +161,9 @@ def collect_jobs(folder_path, output_file_location):
         for match in matches:
             last_match = match
         if last_match:
-            measure_results_data['Point_Center_X'] = match.groupdict()['p_center_x']
-            measure_results_data['Point_Center_Y'] = match.groupdict()['p_center_y']
-            measure_results_data['Point_Center_Z'] = match.groupdict()['p_center_z']
+            measure_results_data['Point_Center_X'] = int(match.groupdict()['p_center_x'])
+            measure_results_data['Point_Center_Y'] = int(match.groupdict()['p_center_y'])
+            measure_results_data['Point_Center_Z'] = int(match.groupdict()['p_center_z'])
 
         # Search SKEW
         pattern = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; - )Skew:\s*(?P<skew>-?\d*)')
@@ -176,7 +174,7 @@ def collect_jobs(folder_path, output_file_location):
         for match in matches:
             last_match = match
         if last_match:
-            measure_results_data['Skew'] = match.groupdict()['skew']
+            measure_results_data['Skew'] = int(match.groupdict()['skew'])
 
         # Search TILT
         pattern = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; - )Tilt\s*(?P<tilt>-?\d*)')
@@ -187,7 +185,37 @@ def collect_jobs(folder_path, output_file_location):
         for match in matches:
             last_match = match
         if last_match:
-            measure_results_data['Tilt'] = match.groupdict()['tilt']
+            measure_results_data['Tilt'] = int(match.groupdict()['tilt'])
+
+        # Search TWL detected
+        pattern = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; -- )Number of detected twist locks \(TL\):\s*(?P<det_twl>-?\d*)')
+        matches = pattern.finditer(log_lines)
+
+        last_match = None
+
+        for match in matches:
+            last_match = match
+        if last_match:
+            measure_results_data['N_of_TWL_detected'] = int(match.groupdict()['det_twl'])
+
+        # Search TWL calculated
+        pattern = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; -- )Number of calculated twist locks \(TL\):\s*(?P<calc_twl>-?\d*)')
+        matches = pattern.finditer(log_lines)
+
+        last_match = None
+
+        for match in matches:
+            last_match = match
+        if last_match:
+            measure_results_data['N_of_TWL_calculated'] = int(match.groupdict()['calc_twl'])
+
+        # Define TLMS success
+        if measure_results_data['Task_str'] != None:
+            if measure_results_data['Init_meas_status'] == 'InProgr':
+                if measure_results_data['Last_meas_status'] == 'Done':
+                    measure_results_data['TLMS_success'] = 1
+                elif measure_results_data['Last_meas_status'] == 'Failed':
+                    measure_results_data['TLMS_success'] = 0
 
         measure_results.append(measure_results_data)
 
@@ -221,7 +249,9 @@ def init_measure_results_data():
         'Skew' : None,
         'Tilt' : None,
         'N_of_TWL_detected' : None, 
-        'N_of_TWL_calculated' : None
+        'N_of_TWL_calculated' : None,
+        'TLMS_success' : None
+
     }
     
     return measure_results_data
