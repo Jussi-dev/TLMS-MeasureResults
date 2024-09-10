@@ -36,7 +36,7 @@ def parse_logs_to_csv(folder_path, output_file_location):
                 pass
 
 def collect_jobs(folder_path, output_file_location):
-    csv_files = glob.glob(os.path.join(folder_path, '**', 'MeasureResult*.csv'), recursive=True)
+    csv_files = glob.glob(os.path.join(folder_path, '**', 'MeasureResult*.[cC][sS][vV]'), recursive=True)
     measure_results = [] # list of measurement jobs
 
     for csv_file in csv_files:
@@ -187,8 +187,8 @@ def collect_jobs(folder_path, output_file_location):
         if last_match:
             measure_results_data['Tilt'] = int(match.groupdict()['tilt'])
 
-        # Search TWL detected
-        pattern = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; -- )Number of detected twist locks \(TL\):\s*(?P<det_twl>-?\d*)')
+        # Search TWL or container edges detected
+        pattern = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; -- )(?:Number of detected twist locks \(TL\):|Number of detected container edges \(CE\):)\s*(?P<det_twl>-?\d*)')
         matches = pattern.finditer(log_lines)
 
         last_match = None
@@ -198,8 +198,8 @@ def collect_jobs(folder_path, output_file_location):
         if last_match:
             measure_results_data['N_of_TWL_detected'] = int(match.groupdict()['det_twl'])
 
-        # Search TWL calculated
-        pattern = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; -- )Number of calculated twist locks \(TL\):\s*(?P<calc_twl>-?\d*)')
+        # Search TWL or container edges calculated
+        pattern = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; -- )(?:Number of calculated twist locks \(TL\):|Number of calculated container edges \(CE\):)\s*(?P<calc_twl>-?\d*)')
         matches = pattern.finditer(log_lines)
 
         last_match = None
