@@ -54,7 +54,7 @@ def collect_jobs(folder_path, output_file_location):
             measure_results_data['Timestamp'] = parse_timestamp(match.groupdict()['timestamp'])
 
         # Search MEASUREMENT ID
-        pattern = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; - )Measurement ID:\s*(?P<measurement_id>Man|\w*-\w*-\w*-\w*-\w*)')
+        pattern = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; - )Measurement ID:\s*(?P<measurement_id>Man|\w*-\w*-\w*-\w*-\w*|measurement_id_\d+)')
         match = pattern.search(log_lines)
         if match:
             measure_results_data['Measurement_ID'] = match.groupdict()['measurement_id']
