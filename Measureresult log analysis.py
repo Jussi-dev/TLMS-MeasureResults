@@ -52,6 +52,7 @@ def collect_jobs(folder_path, output_file_location):
         match = pattern.search(log_lines)
         if match:
             measure_results_data['Timestamp'] = parse_timestamp(match.groupdict()['timestamp'])
+            measure_results_data['Date'] = parse_date(match.groupdict()['timestamp'])
 
         # Search MEASUREMENT ID
         pattern = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; - )Measurement ID:\s*(?P<measurement_id>Man|\w*-\w*-\w*-\w*-\w*|measurement_id_\d+)')
@@ -225,6 +226,7 @@ def init_measure_results_data():
     measure_results_data = {
         'filename' : None,
         'Timestamp' : None,
+        'Date' : None,
         'Measurement_ID' : None,
         'Lane' : None,
         'Task_num' : None,
@@ -259,6 +261,9 @@ def init_measure_results_data():
 def parse_timestamp(match_timestamp):
     return datetime.strptime(match_timestamp, '%d.%m.%Y %H:%M:%S;%f')
 
+def parse_date(match_timestamp):
+    return match_timestamp.split()[0].replace(".", "")
+
 def main():
     root = tk.Tk()
     root.withdraw()
@@ -269,6 +274,7 @@ def main():
     df = pd.DataFrame.from_dict(collect_jobs(log_folder_path, output_file_location))
     df.to_csv('Measureresults.csv')
     df.to_excel('Measureresult.xlsx')
+    print("Done!")
 
 if __name__ == "__main__":
     main()
