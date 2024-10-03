@@ -1,4 +1,5 @@
 import os
+import time
 import glob
 import csv
 import tkinter as tk
@@ -75,9 +76,12 @@ def collect_jobs(folder_path, output_file_location):
             pattern_TWL_DETECTED = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; -- )Number of detected twist locks \(TL\):\s*(?P<det_twl>-?\d*)')
             pattern_TWL_CALCULATED = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; -- )Number of calculated twist locks \(TL\):\s*(?P<calc_twl>-?\d*)')
 
+            # Record the start time
+            start_time = time.time()
+
             # Read csv file line by line
-            for log_line in file:
-                
+            for line_index, log_line in enumerate(file, start=1):
+
                 # Search START OF JOB
                 match = pattern_START_OF_JOB.search(log_line)
                 if match:
@@ -214,6 +218,14 @@ def collect_jobs(folder_path, output_file_location):
                     measure_results_data['TLMS_success'] = 1
                 elif measure_results_data['Last_meas_status'] == 'Failed':
                     measure_results_data['TLMS_success'] = 0
+
+        # Record the end time
+        end_time = time.time()
+
+        # Calculate elapsed time
+        elapsed_time = end_time - start_time
+        print(f"Elapsed time for processing {measure_results_data['filename']}: {line_index} lines, {elapsed_time:.2f} seconds")
+
 
         measure_results.append(measure_results_data)
 
