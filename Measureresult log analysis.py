@@ -224,7 +224,7 @@ def collect_jobs(folder_path, output_file_location):
 
         # Calculate elapsed time
         elapsed_time = end_time - start_time
-        print(f"Elapsed time for processing {measure_results_data['filename']}: {line_index} lines, {elapsed_time:.2f} seconds")
+        print(f"Elapsed time for processing {measure_results_data['filename']}: {line_index} lines, {elapsed_time:.3f} seconds")
 
 
         measure_results.append(measure_results_data)
