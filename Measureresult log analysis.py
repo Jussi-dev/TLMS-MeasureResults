@@ -35,97 +35,116 @@ def parse_logs_to_csv(folder_path, output_file_location):
             elif parsing_state is State.SEARCH_JOB_INFO:
                 pass
 
+
 def collect_jobs(folder_path, output_file_location):
+
+    # Get all csv files in the folder and subfolders
     csv_files = glob.glob(os.path.join(folder_path, '**', 'MeasureResult*.[cC][sS][vV]'), recursive=True)
+
+    # Initialize list of measurement jobs
     measure_results = [] # list of measurement jobs
 
     for csv_file in csv_files:
+
+        # Initialize dictionary to store measurement job data
         measure_results_data = init_measure_results_data()
+
+        # open csv file
         with open(csv_file, 'r') as file:
 
-        #Filename
+            # Extract csv filename
             measure_results_data['filename'] = os.path.basename(csv_file)
 
+            # Initialize patterns
+            pattern_START_OF_JOB = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; - )ASCCS Start Measurement Message received')
+            pattern_MEASUREMENT_ID = re.compile(r'Measurement ID:\s*(?P<measurement_id>Man|\w*-\w*-\w*-\w*-\w*|measurement_id_\d+)')
+            pattern_LANE = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; - )Lane:\s*(?P<lane>\s*\d*)')
+            pattern_TASK = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; - )Task:\s*(?P<task_num>\s*\d*)\s*-\s*(?P<task_str>\w*)')
+            pattern_POS = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; - )Pos:\s*(?P<pos_num>\s*\d*)\s*-\s*(?P<pos_str>\w*)')
+            pattern_LEN = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; - )Len:\s*(?P<len_num>Not Available|\d+)\s*-\s(?P<len_str>Not Available|\w*)')
+            pattern_TYPE = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; - )Type:\s*(?P<type_num>\s*\d*)\s*-\s*(?P<type_str>.*)')
+            pattern_CONT_LENGTH = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; - )Cont. Length:\s*(?P<c_length>\s*\d*)')
+            pattern_CONT_WIDTH = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; - )Cont. Width:\s*(?P<c_width>\s*\d*)')
+            pattern_CONT_HEIGHT = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; - )Cont. Height:\s*(?P<c_height>\s*\d*)')
+            pattern_LANE_STATUS = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; - )LaneStat\s*-\s*(?P<lane_status>\w*)')
+            pattern_MEASUREMENT_STATUS = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; - )\s\|\s*MeasStat\s*-\s*(?P<meas_status>\w*)')
+            pattern_ASSUMING_TRAILER = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; - )Assuming\s*(?P<assuming_trailer>\w*)')
+            pattern_POINT_CENTER = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; - )Point Center X\/Y\/Z:\s*(?P<p_center_x>\d*)\s*\/\s*(?P<p_center_y>\d*)\s*\/\s*(?P<p_center_z>\d*)')
+            pattern_SKEW = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; - )Skew:\s*(?P<skew>-?\d*)')
+            pattern_TILT = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; - )Tilt\s*(?P<tilt>-?\d*)')
+            pattern_TWL_DETECTED = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; -- )Number of detected twist locks \(TL\):\s*(?P<det_twl>-?\d*)')
+            pattern_TWL_CALCULATED = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; -- )Number of calculated twist locks \(TL\):\s*(?P<calc_twl>-?\d*)')
+
+            # Read csv file line by line
             for log_line in file:
                 
                 # Search START OF JOB
-                pattern = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; - )ASCCS Start Measurement Message received')
-                match = pattern.search(log_line)
+                match = pattern_START_OF_JOB.search(log_line)
                 if match:
                     measure_results_data['Timestamp'] = parse_timestamp(match.groupdict()['timestamp'])
                     measure_results_data['Date'] = parse_date(match.groupdict()['timestamp'])
                     continue
 
                 # Search MEASUREMENT ID
-                pattern = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; - )Measurement ID:\s*(?P<measurement_id>Man|\w*-\w*-\w*-\w*-\w*|measurement_id_\d+)')
-                match = pattern.search(log_line)
+                match = pattern_MEASUREMENT_ID.search(log_line)
                 if match:
                     measure_results_data['Measurement_ID'] = match.groupdict()['measurement_id']
                     continue
 
                 # Search LANE
-                pattern = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; - )Lane:\s*(?P<lane>\s*\d*)')
-                match = pattern.search(log_line)
+                match = pattern_LANE.search(log_line)
                 if match:
                     measure_results_data['Lane'] = match.groupdict()['lane']
                     continue
 
                 # Search TASK
-                pattern = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; - )Task:\s*(?P<task_num>\s*\d*)\s*-\s*(?P<task_str>\w*)')
-                match = pattern.search(log_line)
+                match = pattern_TASK.search(log_line)
                 if match:
                     measure_results_data['Task_num'] = match.groupdict()['task_num']
                     measure_results_data['Task_str'] = match.groupdict()['task_str'].rstrip()
                     continue
 
                 # Search POS
-                pattern = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; - )Pos:\s*(?P<pos_num>\s*\d*)\s*-\s*(?P<pos_str>\w*)')
-                match = pattern.search(log_line)
+                match = pattern_POS.search(log_line)
                 if match:
                     measure_results_data['Pos_num'] = match.groupdict()['pos_num']
                     measure_results_data['Pos_str'] = match.groupdict()['pos_str'].rstrip()
                     continue
 
                 # Search LEN
-                pattern = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; - )Len:\s*(?P<len_num>Not Available|\d+)\s*-\s(?P<len_str>Not Available|\w*)')
-                match = pattern.search(log_line)
+                match = pattern_LEN.search(log_line)
                 if match:
                     measure_results_data['Len_num'] = match.groupdict()['len_num']
                     measure_results_data['Len_str'] = match.groupdict()['len_str'].rstrip()
                     continue
 
                 # Search TYPE
-                pattern = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; - )Type:\s*(?P<type_num>\s*\d*)\s*-\s*(?P<type_str>.*)')
-                match = pattern.search(log_line)
+                match = pattern_TYPE.search(log_line)
                 if match:
                     measure_results_data['Type_num'] = match.groupdict()['type_num']
                     measure_results_data['Type_str'] = match.groupdict()['type_str'].rstrip()
                     continue
 
                 # Search CONTAINER LENGTH
-                pattern = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; - )Cont. Length:\s*(?P<c_length>\s*\d*)')
-                match = pattern.search(log_line)
+                match = pattern_CONT_LENGTH.search(log_line)
                 if match:
                     measure_results_data['Cont_Length'] = int(match.groupdict()['c_length'])
                     continue
 
                 # Search CONTAINER WIDTH
-                pattern = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; - )Cont. Width:\s*(?P<c_width>\s*\d*)')
-                match = pattern.search(log_line)
+                match = pattern_CONT_WIDTH.search(log_line)
                 if match:
                     measure_results_data['Cont_Width'] = int(match.groupdict()['c_width'])
                     continue
 
                 # Search CONTAINER HEIGHT
-                pattern = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; - )Cont. Height:\s*(?P<c_height>\s*\d*)')
-                match = pattern.search(log_line)
+                match = pattern_CONT_HEIGHT.search(log_line)
                 if match:
                     measure_results_data['Cont_Height'] = int(match.groupdict()['c_height'])
                     continue
                 
                 # Search LANE STATUS
-                pattern = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; - )LaneStat\s*-\s*(?P<lane_status>\w*)')
-                match = pattern.search(log_line)
+                match = pattern_LANE_STATUS.search(log_line)
 
                 if match:
                     if measure_results_data['Init_lane_status'] == None:
@@ -135,8 +154,7 @@ def collect_jobs(folder_path, output_file_location):
                     continue
                 
                 # Search MEASUREMENT STATUS
-                pattern = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; - )\s\|\s*MeasStat\s*-\s*(?P<meas_status>\w*)')
-                match = pattern.search(log_line)
+                match = pattern_MEASUREMENT_STATUS.search(log_line)
      
                 if match:
                     if measure_results_data['Init_meas_status'] == None:
@@ -146,16 +164,14 @@ def collect_jobs(folder_path, output_file_location):
                     continue
 
                 # Search ASSUMING TRAILER
-                pattern = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; - )Assuming\s*(?P<assuming_trailer>\w*)')
-                match = pattern.search(log_line)
+                match = pattern_ASSUMING_TRAILER.search(log_line)
 
                 if match:
                     measure_results_data['Assuming_trailer'] = match.groupdict()['assuming_trailer'].rstrip()
                     continue
 
                 # Search POINT CENTER
-                pattern = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; - )Point Center X\/Y\/Z:\s*(?P<p_center_x>\d*)\s*\/\s*(?P<p_center_y>\d*)\s*\/\s*(?P<p_center_z>\d*)')
-                match = pattern.search(log_line)
+                match = pattern_POINT_CENTER.search(log_line)
 
                 if match:
                     measure_results_data['Point_Center_X'] = int(match.groupdict()['p_center_x'])
@@ -164,32 +180,28 @@ def collect_jobs(folder_path, output_file_location):
                     continue
 
                 # Search SKEW
-                pattern = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; - )Skew:\s*(?P<skew>-?\d*)')
-                match = pattern.search(log_line)
+                match = pattern_SKEW.search(log_line)
 
                 if match:
                     measure_results_data['Skew'] = int(match.groupdict()['skew'])
                     continue
 
                 # Search TILT
-                pattern = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; - )Tilt\s*(?P<tilt>-?\d*)')
-                match = pattern.search(log_line)
+                match = pattern_TILT.search(log_line)
 
                 if match:
                     measure_results_data['Tilt'] = int(match.groupdict()['tilt'])
                     continue
 
                 # Search TWL or container edges detected
-                pattern = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; -- )(?:Number of detected twist locks \(TL\):|Number of detected container edges \(CE\):)\s*(?P<det_twl>-?\d*)')
-                match = pattern.search(log_line)
+                match = pattern_TWL_DETECTED.search(log_line)
 
                 if match:
                     measure_results_data['N_of_TWL_detected'] = int(match.groupdict()['det_twl'])
                     continue
 
                 # Search TWL or container edges calculated
-                pattern = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; -- )(?:Number of calculated twist locks \(TL\):|Number of calculated container edges \(CE\):)\s*(?P<calc_twl>-?\d*)')
-                match = pattern.search(log_line)
+                match = pattern_TWL_CALCULATED.search(log_line)
 
                 if match:
                     measure_results_data['N_of_TWL_calculated'] = int(match.groupdict()['calc_twl'])
