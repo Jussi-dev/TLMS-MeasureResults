@@ -65,8 +65,8 @@ def collect_jobs(folder_path, output_file_location):
     pattern_POINT_CENTER = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; - )Point Center X\/Y\/Z:\s*(?P<p_center_x>\d*)\s*\/\s*(?P<p_center_y>\d*)\s*\/\s*(?P<p_center_z>\d*)')
     pattern_SKEW = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; - )Skew:\s*(?P<skew>-?\d*)')
     pattern_TILT = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; - )Tilt\s*(?P<tilt>-?\d*)')
-    pattern_TWL_DETECTED = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; -- )Number of detected twist locks \(TL\):\s*(?P<det_twl>-?\d*)')
-    pattern_TWL_CALCULATED = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; -- )Number of calculated twist locks \(TL\):\s*(?P<calc_twl>-?\d*)')
+    pattern_TWL_DETECTED = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; -- )(Number of detected twist locks \(TL\)|Number of detected container edges \(CE\)):\s*(?P<det_twl>-?\d*)')
+    pattern_TWL_CALCULATED = re.compile(r'(?P<timestamp>\d{2}\.\d{2}\.\d{4}\ \d{2}:\d{2}:\d{2};\d{3})(?P<fill>;\d{3}; ; ;S; -- )(Number of calculated twist locks \(TL\)|Number of calculated container edges \(CE\)):\s*(?P<calc_twl>-?\d*)')
 
     for csv_file in csv_files:
 
@@ -213,6 +213,8 @@ def collect_jobs(folder_path, output_file_location):
 
                 if match:
                     measure_results_data['N_of_TWL_detected'] = int(match.groupdict()['det_twl'])
+                    if measure_results_data['N_of_TWL_calculated'] == None:
+                        measure_results_data['N_of_TWL_calculated'] = 0
                     continue
 
                 # Search TWL or container edges calculated
