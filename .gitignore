@@ -3,3 +3,4 @@ Measureresults.csv
 utils.py
 Measureresult.xlsx
 ~$Measureresult.xlsx
+__pycache__/
