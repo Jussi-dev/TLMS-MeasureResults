@@ -77,7 +77,7 @@ def collect_jobs(folder_path, output_file_location):
         with open(csv_file, 'r') as file:
 
             # Extract csv filename
-            measure_results_data['filename'] = os.path.basename(csv_file)
+            measure_results_data['filename'] = os.path.abspath(csv_file)
 
 
 
@@ -274,8 +274,8 @@ def init_measure_results_data():
         'Tilt' : None,
         'N_of_TWL_detected' : None, 
         'N_of_TWL_calculated' : None,
-        'TLMS_success' : None
-
+        'TLMS_success' : None,
+        'ATH_success' : None
     }
     
     return measure_results_data
