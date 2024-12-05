@@ -294,7 +294,6 @@ def process_measurement_logs():
     output_file_location = "output/results"
     # parse_logs_to_csv(log_folder_path, output_file_location)
     df = pd.DataFrame.from_dict(collect_jobs(log_folder_path, output_file_location))
-    df.to_csv('Measureresults.csv')
     df.to_excel('Measureresult.xlsx')
     print("Done!")
 
