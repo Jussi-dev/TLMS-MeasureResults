@@ -284,7 +284,11 @@ def parse_timestamp(match_timestamp):
     return datetime.strptime(match_timestamp, '%d.%m.%Y %H:%M:%S;%f')
 
 def parse_date(match_timestamp):
-    return match_timestamp.split()[0].replace(".", "")
+    date = match_timestamp.split(" ") # split date and time
+    date = date[0].split(".") # split day, month and year
+    date = date[::-1] # reverse the order
+    date = "".join(date) # join the elements
+    return date
 
 def process_measurement_logs():
     root = tk.Tk()
